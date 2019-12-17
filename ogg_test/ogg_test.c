@@ -3,9 +3,9 @@
 #include <stdlib.h>
 #include <ogg/ogg.h>
 #include "ogg_test.h"
+ogg_stream_state * stream_state=NULL;
 int main(int argc, char *argv[])
 {
-    ogg_stream_state stream_state;	
     FILE * file=NULL;
     ogg_packet packet;
     int packet_count=0;
@@ -15,8 +15,7 @@ int main(int argc, char *argv[])
     }
     
     file= fopen(argv[1], "rb+");
-    ogg_stream_init(&stream_state,1011);
-    while(read_next_packet(file,&stream_state,&packet)==1){
+    while(read_next_packet(file,&packet)==1){
         packet_count++;
         printf("packet NO %I64d, length is %d\n",packet.packetno,packet.bytes);
     }
@@ -30,36 +29,41 @@ int read_ogg_page(FILE * file,ogg_sync_state * sync_state,ogg_page * page){
     while (ogg_sync_pageout(sync_state, page) !=1) {
         buffer = ogg_sync_buffer(sync_state, cache_size);
         bytes = fread(buffer, 1, cache_size, file);
+        ogg_sync_wrote(sync_state, bytes);
         if(bytes!=cache_size)  {   //end of file
             printf("End of file, exiting.");
             return 0;                
         }
-        ogg_sync_wrote(sync_state, bytes);
     }
     //free()
     return 1;
 }
-int write_page_to_stream(FILE * file,ogg_stream_state * stream_state){
+int write_page_to_stream(FILE * file){
     ogg_sync_state sync_state;
 	ogg_page page;
     int rc=0;
 	ogg_sync_init(&sync_state);
     if(read_ogg_page(file,&sync_state,&page)==1){
+        if(!stream_state){
+            stream_state=malloc(sizeof(ogg_stream_state));
+            ogg_stream_init(stream_state,ogg_page_serialno(&page));
+        }
         rc=ogg_stream_pagein(stream_state,&page);
     }else{
+        ogg_stream_pagein(stream_state,&page);
         rc=-1;  //end of file.
     }
     return rc;
 }
-int  read_next_packet(FILE * file, ogg_stream_state * stream_state,ogg_packet  *  packet){
+int  read_next_packet(FILE * file,ogg_packet  *  packet){
     // -1 if end of file.
       //  1 if a packet was assembled normally. op contains the next packet from the stream.
       int rc=0;
-     while(rc=write_page_to_stream(file, stream_state)!=1){
-         if(rc=-1)
+     while((rc=write_page_to_stream(file))!=1){
+         if(rc==-1)
              break;
      }
-     if(rc!=-1)
+     //if(rc!=-1)
         ogg_stream_packetout(stream_state, packet);
      return rc;   
 }
