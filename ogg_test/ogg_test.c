@@ -15,7 +15,7 @@ int main(int argc, char *argv[])
     }
     
     file= fopen(argv[1], "rb+");
-    while(read_next_packet(file,&packet)==1){
+    while(read_next_packet(file,&packet)==0){
         packet_count++;
         printf("packet NO %I64d, length is %d\n",packet.packetno,packet.bytes);
     }
@@ -24,14 +24,14 @@ int main(int argc, char *argv[])
 }
 int read_ogg_page(FILE * file,ogg_sync_state * sync_state,ogg_page * page){
     long cache_size = 8 * 1024;
-    char* buffer=malloc(cache_size);
-	size_t bytes;    
+    char* buffer=NULL;
+	size_t bytes=0;    
     while (ogg_sync_pageout(sync_state, page) !=1) {
         buffer = ogg_sync_buffer(sync_state, cache_size);
         bytes = fread(buffer, 1, cache_size, file);
         ogg_sync_wrote(sync_state, bytes);
         if(bytes!=cache_size)  {   //end of file
-            printf("End of file, exiting.");
+            printf("End of file, exiting.\n");
             return 0;                
         }
     }
@@ -51,7 +51,7 @@ int write_page_to_stream(FILE * file){
         rc=ogg_stream_pagein(stream_state,&page);
     }else{
         ogg_stream_pagein(stream_state,&page);
-        rc=-1;  //end of file.
+        rc=-2;  //end of file.
     }
     return rc;
 }
@@ -59,12 +59,12 @@ int  read_next_packet(FILE * file,ogg_packet  *  packet){
     // -1 if end of file.
       //  1 if a packet was assembled normally. op contains the next packet from the stream.
       int rc=0;
-     while((rc=write_page_to_stream(file))!=1){
-         if(rc==-1)
+     while((rc=write_page_to_stream(file))!=0){
+         if(rc==-2)
              break;
      }
      //if(rc!=-1)
-        ogg_stream_packetout(stream_state, packet);
+    ogg_stream_packetout(stream_state, packet);
      return rc;   
 }
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
