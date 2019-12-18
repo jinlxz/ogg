@@ -32,7 +32,7 @@ int read_ogg_page(FILE * file,ogg_sync_state * sync_state,ogg_page * page){
     long cache_size = 8 * 1024;
     char* buffer=NULL;
 	size_t bytes=0;    
-    while ((ogg_sync_pageout(sync_state, page))!=1) {
+    do {
         buffer = ogg_sync_buffer(sync_state, cache_size);
         bytes = fread(buffer, 1, cache_size, file);
         ogg_sync_wrote(sync_state, bytes);
@@ -44,7 +44,7 @@ int read_ogg_page(FILE * file,ogg_sync_state * sync_state,ogg_page * page){
             }else
                 return -2; //end of file and skipped some bytes.
         }
-    }
+    }while(ogg_sync_pageout(sync_state, page)!=1);
     return 1;
 }
 int write_page_to_stream(FILE * file){
