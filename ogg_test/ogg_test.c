@@ -7,6 +7,7 @@ ogg_stream_state * stream_state=NULL;
 int main(int argc, char *argv[])
 {
     FILE * file=NULL;
+    int rc=0;
     ogg_packet packet;
     int packet_count=0;
     if(argc!=2){
@@ -15,7 +16,11 @@ int main(int argc, char *argv[])
     }
     
     file= fopen(argv[1], "rb+");
-    while(read_next_packet(file,&packet)==0){
+    while((rc=read_next_packet(file,&packet))==1){
+        packet_count++;
+        printf("packet NO %I64d, length is %d\n",packet.packetno,packet.bytes);
+    }
+    if(rc==0){  //normal end of file and eof page.
         packet_count++;
         printf("packet NO %I64d, length is %d\n",packet.packetno,packet.bytes);
     }
@@ -23,19 +28,23 @@ int main(int argc, char *argv[])
     fclose(file);	
 }
 int read_ogg_page(FILE * file,ogg_sync_state * sync_state,ogg_page * page){
+    int rc=0;
     long cache_size = 8 * 1024;
     char* buffer=NULL;
 	size_t bytes=0;    
-    while (ogg_sync_pageout(sync_state, page) !=1) {
+    while ((ogg_sync_pageout(sync_state, page))!=1) {
         buffer = ogg_sync_buffer(sync_state, cache_size);
         bytes = fread(buffer, 1, cache_size, file);
         ogg_sync_wrote(sync_state, bytes);
         if(bytes!=cache_size)  {   //end of file
-            printf("End of file, exiting.\n");
-            return 0;                
+            //printf("End of file, exiting.\n");
+            rc=ogg_sync_pageout(sync_state, page);
+            if(rc==1){
+                return 0;  //end of file and the last page is returned.
+            }else
+                return -2; //end of file and skipped some bytes.
         }
     }
-    //free()
     return 1;
 }
 int write_page_to_stream(FILE * file){
@@ -43,29 +52,36 @@ int write_page_to_stream(FILE * file){
 	ogg_page page;
     int rc=0;
 	ogg_sync_init(&sync_state);
-    if(read_ogg_page(file,&sync_state,&page)==1){
+    rc=read_ogg_page(file,&sync_state,&page);
+    if(rc==1){ //page is available normally.
         if(!stream_state){
             stream_state=malloc(sizeof(ogg_stream_state));
             ogg_stream_init(stream_state,ogg_page_serialno(&page));
         }
-        rc=ogg_stream_pagein(stream_state,&page);
-    }else{
         ogg_stream_pagein(stream_state,&page);
-        rc=-2;  //end of file.
+    }else if(rc==0){ //end of file and the last page is returned.
+        //write last page to stream;
+        ogg_stream_pagein(stream_state,&page);
+    }else{  //rc==-2 end of file and skipped some bytes.
     }
     return rc;
 }
 int  read_next_packet(FILE * file,ogg_packet  *  packet){
     // -1 if end of file.
       //  1 if a packet was assembled normally. op contains the next packet from the stream.
-      int rc=0;
-     while((rc=write_page_to_stream(file))!=0){
-         if(rc==-2)
+      int rc=0,rc1=0;
+     do{
+         rc1=write_page_to_stream(file);
+         if(rc1==0){
+            ogg_stream_packetout(stream_state, packet);
+            break;
+         }else if(rc1==-2){
              break;
-     }
-     //if(rc!=-1)
-    ogg_stream_packetout(stream_state, packet);
-     return rc;   
+         }else{
+             rc=ogg_stream_packetout(stream_state,packet);
+        }
+     }while(rc!=1);
+     return rc1;   
 }
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
 // Debug program: F5 or Debug > Start Debugging menu
