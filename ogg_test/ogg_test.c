@@ -3,11 +3,13 @@
 #include <stdlib.h>
 #include <ogg/ogg.h>
 #include "ogg_test.h"
+#include "ogg_encoder.h"
 ogg_stream_state * stream_state=NULL;
 int main(int argc, char *argv[])
 {
     FILE * file=NULL;
     int rc=0;
+    ogg_page * page_list[10]={NULL};
     ogg_packet packet;
     int packet_count=0;
     if(argc!=2){
@@ -18,11 +20,13 @@ int main(int argc, char *argv[])
     file= fopen(argv[1], "rb+");
     while((rc=read_next_packet(file,&packet))==1){
         packet_count++;
+        get_next_page(&packet,&page_list);
         printf("packet NO %I64d, length is %d\n",packet.packetno,packet.bytes);
     }
     if(rc==0){  //normal end of file and eof page.
         packet_count++;
         printf("packet NO %I64d, length is %d\n",packet.packetno,packet.bytes);
+        get_next_page(NULL,&page_list);
     }
     printf("total packet count is %d\n",packet_count);
     fclose(file);	

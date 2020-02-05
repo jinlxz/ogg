@@ -45,6 +45,6 @@ CTestTestfile.cmake
 CMakeSettings.json
 
 *[Bb]uild*/
-
+.codelite
 .vs/
 .vscode/
