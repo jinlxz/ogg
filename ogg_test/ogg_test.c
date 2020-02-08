@@ -5,7 +5,7 @@
 #include "ogg_test.h"
 #include "ogg_encoder.h"
 ogg_stream_state * stream_state=NULL;
-int main(int argc, char *argv[])
+int mainx(int argc, char *argv[])
 {
     FILE * file=NULL;
     int rc=0;
@@ -20,23 +20,25 @@ int main(int argc, char *argv[])
     file= fopen(argv[1], "rb+");
     while((rc=read_next_packet(file,&packet))==1){
         packet_count++;
-        get_next_page(&packet,&page_list);
-        printf("packet NO %I64d, length is %d\n",packet.packetno,packet.bytes);
+        get_next_page(&packet,page_list,10);
+        printf("packet NO %I64d, length is %I32d\n",packet.packetno,packet.bytes);
     }
     if(rc==0){  //normal end of file and eof page.
         packet_count++;
-        printf("packet NO %I64d, length is %d\n",packet.packetno,packet.bytes);
-        get_next_page(NULL,&page_list);
+        printf("packet NO %I64d, length is %I32d\n",packet.packetno,packet.bytes);
     }
+    //get_next_page(NULL,page_list,10);
     printf("total packet count is %d\n",packet_count);
-    fclose(file);	
+    fclose(file);
+    return 0;	
 }
+
 int read_ogg_page(FILE * file,ogg_sync_state * sync_state,ogg_page * page){
     int rc=0;
     long cache_size = 8 * 1024;
     char* buffer=NULL;
 	size_t bytes=0;    
-    do {
+    while(ogg_sync_pageout(sync_state, page)!=1) {
         buffer = ogg_sync_buffer(sync_state, cache_size);
         bytes = fread(buffer, 1, cache_size, file);
         ogg_sync_wrote(sync_state, bytes);
@@ -48,7 +50,7 @@ int read_ogg_page(FILE * file,ogg_sync_state * sync_state,ogg_page * page){
             }else
                 return -2; //end of file and skipped some bytes.
         }
-    }while(ogg_sync_pageout(sync_state, page)!=1);
+    }
     return 1;
 }
 int write_page_to_stream(FILE * file){
