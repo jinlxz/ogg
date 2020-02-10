@@ -23,8 +23,12 @@ int get_next_page(ogg_packet * packet, ogg_page * pages[], int page_size){
         stream_state_encoder=malloc(sizeof(ogg_stream_state));
         ogg_stream_init(stream_state_encoder,1);
     }
-    for(int i=0;i<page_size;i++)
-        pages[i++]=NULL;
+    for(int i=0;i<page_size;i++){
+        pages[i]->header=NULL;
+        pages[i]->header_len=0;
+        pages[i]->body=NULL;
+        pages[i]->body_len=0;
+    }
     /*
     if(packet->b_o_s==1){ //end of page
         temp_page=malloc(sizeof(ogg_page));
