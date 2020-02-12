@@ -14,10 +14,9 @@ unsigned char eos_page[]={0x4f,0x67,0x67,0x53, //magic number
 0x4e,0x7a,0x89,0x69,//CRC_checksum
 0x00//number_page_segments
 };
-int get_next_page(ogg_packet * packet, ogg_page * pages[], int page_size){
+int get_next_page(ogg_encoding_context * encoding_context,ogg_packet * packet, ogg_page * pages[], int page_size){
     int page_index=0;
-    int rc=0,rc0=0;
-    static int packets_in_page=0;
+    int rc=0,rc0=0,rc1=0;
     ogg_page * temp_page=NULL;
     if(!stream_state_encoder){
         stream_state_encoder=malloc(sizeof(ogg_stream_state));
@@ -29,18 +28,8 @@ int get_next_page(ogg_packet * packet, ogg_page * pages[], int page_size){
         pages[i]->body=NULL;
         pages[i]->body_len=0;
     }
-    /*
-    if(packet->b_o_s==1){ //end of page
-        temp_page=malloc(sizeof(ogg_page));
-        memset(temp_page,0,sizeof(ogg_page));
-        temp_page->header=eos_page;
-        temp_page->header_len=sizeof(eos_page);
-        pages[page_index++]=temp_page;
-        return -1; // end of stream.
-        //rc=ogg_stream_pageout(stream_state_encoder,temp_page);
-    }*/
     rc0=ogg_stream_packetin(stream_state_encoder,packet);
-    packets_in_page++;
+    encoding_context->opus_packets_in_page++;
     if(rc0==0){
         do{
             temp_page=malloc(sizeof(ogg_page));
@@ -48,12 +37,12 @@ int get_next_page(ogg_packet * packet, ogg_page * pages[], int page_size){
             rc=ogg_stream_pageout(stream_state_encoder,temp_page);
             if(rc>0){
                 pages[page_index++]=temp_page;
-                packets_in_page=0;
+                encoding_context->opus_packets_in_page=0;
             }
-            else if(rc==0 && packets_in_page>=4) { // insufficient data has accumulated to fill a page
-                ogg_stream_flush(stream_state_encoder,temp_page); // generate a page forcely.
+            else if(rc==0 && encoding_context->opus_packets_in_page>=4) { // insufficient data has accumulated to fill a page
+                rc1=ogg_stream_flush(stream_state_encoder,temp_page); // generate a page forcely.
                 pages[page_index++]=temp_page;
-                packets_in_page=0;
+                encoding_context->opus_packets_in_page=0;
                 break;
             }else{ //rc == 0 , not enough data.
                 break;
@@ -63,4 +52,29 @@ int get_next_page(ogg_packet * packet, ogg_page * pages[], int page_size){
         rc=-1;// failed to do ogg_stream_packetin
     }
     return rc;
+}
+ogg_encoding_context * init_encoding_context(){
+    ogg_stream_state * stream_state=malloc(sizeof(ogg_stream_state));
+    ogg_stream_init(stream_state,1);
+    ogg_encoding_context * encoding_context=malloc(sizeof(ogg_encoding_context));
+    encoding_context->stream_state=stream_state;
+    encoding_context->opus_packets_in_page=0;
+    return encoding_context;
+}
+int destroy_encoding_context(ogg_encoding_context * encoding_context){
+        int rc=0;
+        if(encoding_context->stream_state!=NULL){
+            ogg_stream_state * stream_state=encoding_context->stream_state;
+            rc=ogg_stream_destroy(encoding_context->stream_state);
+            free(encoding_context);
+        }
+        return rc;
+}
+int reset_encoding_context(ogg_encoding_context * encoding_context){
+        int rc=-1;
+        if(encoding_context->stream_state!=NULL){
+            rc=ogg_stream_reset(encoding_context->stream_state);
+            //ogg_stream_clear(encoding_context->stream_state);
+        }
+        return rc;
 }
