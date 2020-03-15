@@ -3,7 +3,7 @@
 #include <string.h>
 #include <ogg/ogg.h>
 #include "ogg_encoder.h"
-ogg_stream_state * stream_state_encoder=NULL;
+//ogg_stream_state * stream_state_encoder=NULL;
 unsigned char eos_page[]={0x4f,0x67,0x67,0x53, //magic number
 0x00, //version
 0x04, //header_type_flag
@@ -18,10 +18,12 @@ int get_next_page(ogg_encoding_context * encoding_context,ogg_packet * packet, o
     int page_index=0;
     int rc=0,rc0=0,rc1=0;
     ogg_page * temp_page=NULL;
+    ogg_stream_state * stream_state_encoder=encoding_context->stream_state;
+    /*
     if(!stream_state_encoder){
         stream_state_encoder=malloc(sizeof(ogg_stream_state));
         ogg_stream_init(stream_state_encoder,1);
-    }
+    }*/
     for(int i=0;i<page_size;i++){
         pages[i]->header=NULL;
         pages[i]->header_len=0;
@@ -39,7 +41,7 @@ int get_next_page(ogg_encoding_context * encoding_context,ogg_packet * packet, o
                 pages[page_index++]=temp_page;
                 encoding_context->opus_packets_in_page=0;
             }
-            else if(rc==0 && encoding_context->opus_packets_in_page>=4) { // insufficient data has accumulated to fill a page
+            else if(rc==0 && encoding_context->opus_packets_in_page>=1) { // insufficient data has accumulated to fill a page
                 rc1=ogg_stream_flush(stream_state_encoder,temp_page); // generate a page forcely.
                 pages[page_index++]=temp_page;
                 encoding_context->opus_packets_in_page=0;
@@ -64,17 +66,18 @@ ogg_encoding_context * init_encoding_context(){
 int destroy_encoding_context(ogg_encoding_context * encoding_context){
         int rc=0;
         if(encoding_context->stream_state!=NULL){
-            ogg_stream_state * stream_state=encoding_context->stream_state;
+            //ogg_stream_state * stream_state=encoding_context->stream_state;
             rc=ogg_stream_destroy(encoding_context->stream_state);
-            free(encoding_context);
+            //free(encoding_context);
         }
         return rc;
 }
 int reset_encoding_context(ogg_encoding_context * encoding_context){
-        int rc=-1;
+        //int rc=-1;
         if(encoding_context->stream_state!=NULL){
-            rc=ogg_stream_reset(encoding_context->stream_state);
-            //ogg_stream_clear(encoding_context->stream_state);
+            //ogg_stream_reset(encoding_context->stream_stat;
+            ogg_stream_clear(encoding_context->stream_state);
+            ogg_stream_init(encoding_context->stream_state,1);
         }
-        return rc;
+        return 0;
 }
