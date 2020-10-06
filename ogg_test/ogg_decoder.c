@@ -72,7 +72,10 @@ int write_page_to_stream(FILE * file,ogg_decoding_context * decoding_context){
 }
 int  read_next_packets(FILE * file,ogg_decoding_context * decoding_context,ogg_packet *  packets[])
 {
-    /*return number of packets*/
+    /*this method get an array of packets from the given file and it will allocate the memory for available packets,
+    which should be freed manually after the packets are processed. packets in the array is valid only if the value of the pointer is not NULL
+
+    Return number of packets*/
     int rc1=0;
     do
     {
@@ -98,15 +101,22 @@ int  read_next_packets(FILE * file,ogg_decoding_context * decoding_context,ogg_p
 int read_packets_in_current_page(ogg_stream_state * stream_state, ogg_packet * packets []){
     /**read all packets in the current page and return the number of packets.*/
     int rc=0, pi=0;
+    ogg_packet * temp_packet=NULL;
+    for(int i=0;i<MAX_PACKET_NUM;i++)
+        packets[i]=NULL;
     do{
-        rc=ogg_stream_packetout(stream_state, packets[pi]);
-        if(rc==1){ // a packet is available.
-            pi++;
-        }
-        if(pi>=MAX_PACKET_NUM){
-            printf("[error] Array used to arrange packets is full..\n");
-            exit(10);
-        }
+            temp_packet=malloc(sizeof(ogg_packet));
+            rc=ogg_stream_packetout(stream_state, temp_packet);
+            if(rc==1){ // a packet is available.
+                packets[pi]=temp_packet;
+                pi++;
+            }else{
+                free(temp_packet);
+            }
+            if(pi>=MAX_PACKET_NUM){
+                printf("[error] Array used to arrange packets is full..\n");
+                exit(10);
+            }
     }while(rc!=0);//no sufficient data is available to construct a packet.
     return pi;
 }
