@@ -2,9 +2,10 @@
 #define OGG_DECODER_H
 #include <stdio.h>
 #include "ogg/ogg.h"
+#define MAX_PACKET_NUM 1024
 int read_ogg_page(FILE * file,ogg_sync_state * state,ogg_page * page);
 int read_packets_in_current_page(ogg_stream_state * stream_state, ogg_packet * packets []);
-
+void free_packet_list(ogg_packet * packets[],int packet_num);
 typedef struct {
     ogg_sync_state * sync_state;
     ogg_stream_state * stream_state;

@@ -10,7 +10,11 @@ int main(int argc, char *argv[])
 {
     FILE * file=NULL;
     int rc=0, pi=0;
-    ogg_packet * packet[10]={NULL};
+    ogg_packet * packet[MAX_PACKET_NUM]={NULL};
+    for(int i=0;i<MAX_PACKET_NUM;i++){
+        packet[i]=malloc(sizeof(ogg_packet));
+        memset(packet[i],0,sizeof(ogg_packet));
+    }
     ogg_decoding_context * decoding_context=init_decoding_context();
     int packet_count=0;
     if(argc!=2){
@@ -34,10 +38,15 @@ int main(int argc, char *argv[])
         }
     }
     destroy_decoding_context(decoding_context);
-
+    free_packet_list(packet,MAX_PACKET_NUM);
     printf("total packet count is %d\n",packet_count);
     fclose(file);
     return 0;
+}
+void free_packet_list(ogg_packet * packets[],int packet_num){
+    for(int i=0;i<packet_num;i++){
+        free(packets[i]);
+    }
 }
 /*
 void free_obj(ogg_page * page_list[],int size){

@@ -1,5 +1,6 @@
 #ifndef OGG_ENCODER_H
 #define OGG_ENCODER_H
+#include "ogg/ogg.h"
 typedef struct {
     ogg_stream_state * stream_state;
     int opus_packets_in_page;

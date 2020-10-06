@@ -32,7 +32,9 @@ src/.deps
 src/test_*
 macosx/build/
 /m4
-
+/*.o
+/*.cbp
+/*.layout
 CMakeCache.txt
 CMakeFiles
 CMakeScripts

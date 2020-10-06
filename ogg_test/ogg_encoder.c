@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ogg/ogg.h>
 #include "ogg_encoder.h"
 //ogg_stream_state * stream_state_encoder=NULL;
 unsigned char eos_page[]={0x4f,0x67,0x67,0x53, //magic number

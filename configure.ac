@@ -2,7 +2,7 @@ dnl Process this file with autoconf to produce a configure script.
 
 AC_INIT([libogg],[1.3.4],[ogg-dev@xiph.org])
 
-LT_INIT([disable-static])
+LT_INIT()
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR(src/framing.c)
 
@@ -25,9 +25,9 @@ dnl Set some options based on environment
 
 cflags_save="$CFLAGS"
 if test -z "$GCC"; then
-        case $host in 
+        case $host in
         *-*-irix*)
-                DEBUG="-g -signed" 
+                DEBUG="-g -signed"
                 CFLAGS="-O2 -w -signed"
                 PROFILE="-p -g3 -O2 -signed"
 		;;
@@ -39,11 +39,11 @@ if test -z "$GCC"; then
         *)
                 DEBUG="-g"
                 CFLAGS="-O"
-                PROFILE="-g -p" 
+                PROFILE="-g -p"
 		;;
         esac
 else
-        case $host in 
+        case $host in
         *-*-linux*)
                 DEBUG="-g -Wall -fsigned-char"
                 CFLAGS="-O20 -Wall -ffast-math -fsigned-char"
@@ -52,7 +52,7 @@ else
         sparc-sun-*)
                 DEBUG="-g -Wall -fsigned-char"
                 CFLAGS="-O20 -ffast-math -fsigned-char"
-                PROFILE="-pg -g -O20 -fsigned-char" 
+                PROFILE="-pg -g -O20 -fsigned-char"
 		;;
 	*-*-darwin*)
 		DEBUG="-fno-common -g -Wall -fsigned-char"
@@ -62,7 +62,7 @@ else
         *)
                 DEBUG="-g -Wall -fsigned-char"
                 CFLAGS="-O20 -fsigned-char"
-                PROFILE="-O20 -g -pg -fsigned-char" 
+                PROFILE="-O20 -g -pg -fsigned-char"
 		;;
         esac
 fi
