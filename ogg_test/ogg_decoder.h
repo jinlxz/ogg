@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include "ogg/ogg.h"
 int read_ogg_page(FILE * file,ogg_sync_state * state,ogg_page * page);
-int read_packets_in_current_page(ogg_packet * packets []);
+int read_packets_in_current_page(ogg_stream_state * stream_state, ogg_packet * packets []);
 
 typedef struct {
     ogg_sync_state * sync_state;

@@ -50,3 +50,4 @@ CMakeSettings.json
 .vscode/
 /bin/
 /obj/
+ogg-codecs.depend

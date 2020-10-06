@@ -10,7 +10,7 @@ int main(int argc, char *argv[])
 {
     FILE * file=NULL;
     int rc=0, pi=0;
-    ogg_packet packet[10]={NULL};
+    ogg_packet * packet[10]={NULL};
     ogg_decoding_context * decoding_context=init_decoding_context();
     int packet_count=0;
     if(argc!=2){
@@ -19,18 +19,18 @@ int main(int argc, char *argv[])
     }
 
     file= fopen(argv[1], "rb+");
-    while((rc=read_next_packets(file,&packet))!=-1){
+    while((rc=read_next_packets(file,decoding_context, packet))!=-1){
         if(rc>0){
             for(int i=0;i<rc;i++){
                 packet_count++;
-                printf("packet NO %I64d, length is %I32d\n",packet[i].packetno,packet[i].bytes);
+                printf("packet NO %I64d, length is %I32d\n",packet[i]->packetno,packet[i]->bytes);
             }
         }
     }
     if(rc==-1){  //normal end of file and eof page.
         while(packet[pi++]){
             packet_count++;
-            printf("packet NO %I64d, length is %I32d\n",packet[pi].packetno,packet[pi].bytes);
+            printf("packet NO %I64d, length is %I32d\n",packet[pi]->packetno,packet[pi]->bytes);
         }
     }
     destroy_decoding_context(decoding_context);
