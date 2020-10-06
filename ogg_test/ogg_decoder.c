@@ -28,7 +28,7 @@ int read_ogg_page(FILE * file,ogg_sync_state * sync_state,ogg_page * page){
     return 1;
 }
 ogg_decoding_context * init_decoding_context(){
-    ogg_decoding_context * decoding_context=malloc(siziof(ogg_decoding_context));
+    ogg_decoding_context * decoding_context=malloc(sizeof(ogg_decoding_context));
     decoding_context->sync_state=malloc(sizeof(ogg_sync_state));
     decoding_context->stream_state=malloc(sizeof(ogg_stream_state));
 
@@ -38,6 +38,13 @@ ogg_decoding_context * init_decoding_context(){
 
     ogg_sync_init(decoding_context->sync_state);
     ogg_stream_init(decoding_context->stream_state,0);
+}
+void destroy_decoding_context(ogg_decoding_context * decoding_context){
+    if(decoding_context->sync_state)
+        ogg_sync_destroy(decoding_context->sync_state);
+    if(decoding_context->stream_state)
+        ogg_stream_destroy(decoding_context->stream_state);
+    free(decoding_context);
 }
 int write_page_to_stream(FILE * file,ogg_decoding_context * decoding_context){
     ogg_sync_state * sync_state=decoding_context->sync_state;
@@ -54,24 +61,32 @@ int write_page_to_stream(FILE * file,ogg_decoding_context * decoding_context){
     }
     return rc;
 }
-int  read_next_packets(FILE * file,ogg_decoding_context * decoding_context,ogg_packet *  packets[]){
-    // -1 if end of file.
-      //  1 if a packet was assembled normally. op contains the next packet from the stream.
-      int rc1=0;
-     do{
-         rc1=write_page_to_stream(file,decoding_context);
-         if(rc1==0){  //last page is available.
-            return read_packets_in_current_page(packets);
-         }else if(rc1==-2){
-             break;
-         }else{ // normal page is available.
-             return read_packets_in_current_page(packets);
+int  read_next_packets(FILE * file,ogg_decoding_context * decoding_context,ogg_packet *  packets[])
+{
+    /*return number of packets*/
+    int rc1=0;
+    do
+    {
+        rc1=write_page_to_stream(file,decoding_context);
+        if(rc1==0)   //last page is available.
+        {
+            read_packets_in_current_page(decoding_context->stream_state,packets);
+            return -1; //indicates last page.
         }
-     }while(rc1==1);
-     return -2;
+        else if(rc1==-2)
+        {
+            break;
+        }
+        else   // normal page is available.
+        {
+            return read_packets_in_current_page(decoding_context->stream_state,packets);
+        }
+    }
+    while(rc1==1);
+    return -2;
 }
 
-int read_packets_in_current_page(ogg_packet * packets []){
+int read_packets_in_current_page(ogg_stream_state * stream_state, ogg_packet * packets []){
     /**read all packets in the current page and return the number of packets.*/
     int rc=0, pi=0;
     do{

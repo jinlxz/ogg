@@ -68,7 +68,7 @@ int destroy_encoding_context(ogg_encoding_context * encoding_context){
         if(encoding_context->stream_state!=NULL){
             //ogg_stream_state * stream_state=encoding_context->stream_state;
             rc=ogg_stream_destroy(encoding_context->stream_state);
-            //free(encoding_context);
+            free(encoding_context);
         }
         return rc;
 }
